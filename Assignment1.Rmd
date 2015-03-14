@@ -1,0 +1,103 @@
+#Assignment1
+========================================
+##Loading and preprocessing the data
+
+```{r global option,echo=FALSE}
+knitr::opts_chunk$set(echo=TRUE)
+```
+
+Load the data
+
+```{r}
+rawdata<-read.csv("activity.csv",sep=",",header=TRUE)
+```
+
+##What is mean total number of steps taken per day?
+
+(1) Total number of steps taken per day
+```{r}
+day_data<-aggregate(steps~date,data=rawdata,FUN=sum)
+```
+
+(2) Histogram of the total number of steps taken each day
+```{r}
+hist(day_data$steps,xlab="steps",main="Total Number of Steps Per Day")
+```
+
+(3) Mean and median of the total number of steps taken per day
+```{r}
+mean_step<-mean(day_data$steps)
+median_step<-median(day_data$steps)
+print(mean_step)
+print(median_step)
+```
+
+## What is the average daily acitivity pattern?
+
+(1) Plot-the 5-minute interval and the average number of steps taken
+```{r}
+day_data$step_interval<-day_data$steps/288
+plot(day_data$step_interval,type="l", xlab="5-minute interval",ylab="average number of steps")
+```
+
+(2) Which 5-minute interva contains the maximum number of steps?
+```{r}
+max<-day_data$date[which.max(day_data$step_interval)]
+max
+```
+
+## Imputing missing values
+
+(1) The total number of missing values in the dataset
+```{r}
+rem_NA<-na.omit(rawdata)
+n_NA<-nrow(rawdata)-nrow(rem_NA)
+n_NA
+```
+
+(2) New dataset with NAs replaced by mean of that 5 interval.
+```{r}
+interval_data<-aggregate(steps~interval,data=rawdata,FUN=mean)
+x<-merge(rawdata,interval_data,by="interval")
+for(i in 1:17568){x$steps.x[is.na(x$steps.x)]<-x$steps.y}
+```
+
+(3) Make a histogram of the total number of steps taken each day
+```{r}
+day_data2<-aggregate(steps.x~date,data=x,FUN= sum)
+head(day_data2)
+hist(day_data2$steps.x,xlab="",main="Total Number of Steps Each Day")
+```
+
+(4) Mean and median total number of steps taken per day
+```{r}
+mean_step2<-mean(day_data2$steps)
+median_step2<-median(day_data2$steps)
+print(mean_step2)
+print(median_step2)
+```
+
+(5) Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+Q: mean_step= 10766.19, mean_step2=9371.437,median_step=10765, median_step2=10395. The values are different. Imputing missing data could result in some difference of the total daiyly number of steps, compare to the orginial results.
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+(1) New datasets with "weekend"and "weekdays" labels.
+```{r}
+x$date<-weekdays(as.Date(x$date))
+for(i in 1:17568){x$wk<-ifelse(x$date %in% c("Saturday","Sunday"),"weekend","weekday")}
+```
+
+(2) Plot- the 5-minute interval and the average number of steps taken
+```{r}
+stepsbyday<-aggregate(steps.x ~ interval+wk,data=x,FUN=mean)
+library(lattice)
+xyplot(steps.x ~ interval|wk,stepsbyday,type="l",layout=c(1,2),xlab="Interval",ylab="Number of steps")
+```
+
+Making a HTML file.
+```{r}
+library(knitr)
+knit2html("Assignment1.Rmd")
+```
